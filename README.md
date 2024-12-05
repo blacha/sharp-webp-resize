@@ -1,6 +1,12 @@
 # fastShrinkOnLoad imagery artifacts
 
-When greatly resizing images eg 512x512 down to 32x32 fastShrinkOnLoad produces edge artifacts with sharp borders
+When greatly resizing image with `fastShrinkOnLoad:true`` produces edge artifacts with sharp borders
+
+given a source image 512x512 
+
+![](./source/source-9-497-324.tiff.webp)
+
+then resizing down to 32x32, then blowing the image back to 128x128 produces the following outputs:
 
 ![](./output/32_default@8.png)
 
