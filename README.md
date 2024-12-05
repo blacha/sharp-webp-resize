@@ -1,6 +1,6 @@
 # fastShrinkOnLoad imagery artifacts
 
-When greatly resizing image with `fastShrinkOnLoad:true`` produces edge artifacts with sharp borders
+When greatly resizing image with `fastShrinkOnLoad:true` produces edge artifacts with sharp borders
 
 given a source image 512x512 
 
