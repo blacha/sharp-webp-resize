@@ -14,13 +14,19 @@ async function composite(pipelineName, pipe) {
 
     const resizeUp = 8;
     const img4x = sharp({ create: { channels: 4, background: { r: 0xff, g: 0, b: 0xff }, width: obj.info.width * resizeUp, height: obj.info.width * resizeUp } })
-    const buf4x = await sharp(Buffer.from(obj.data), { raw: { width: obj.info.width, height: obj.info.height, channels: obj.info.channels } }).resize({ width: resizeUp * obj.info.width, kernel: 'nearest' }).raw().toBuffer({ resolveWithObject: true })
+    const buf4x = await sharp(Buffer.from(obj.data), { raw: { width: obj.info.width, height: obj.info.height, channels: obj.info.channels } })
+            .resize({ width: resizeUp * obj.info.width, kernel: 'nearest' }) // Nearest helps protect the flaws from being resampled out when upscaling
+            .raw()
+            .toBuffer({ resolveWithObject: true })
     img4x.composite([{ input: buf4x.data, raw: { width: buf4x.info.width, height: buf4x.info.height, channels: buf4x.info.channels } }])
     await img4x.png().toFile(`./output/${pipelineName}@${resizeUp}.png`)
 }
 
 async function forceBackground(r,g,b) {
-    console.time('buffer')
+    console.time('background')
+
+    // Locate all pixels which are full alpha and replace the RGB values with the provided background
+    // assumes input picture is RGBA
     const obj = await sharp(sourceBytes).raw().toBuffer({ resolveWithObject: true })
     for (let i = 0; i < obj.data.byteLength; i += 4) {
         const alpha = obj.data[i + 3];
@@ -31,7 +37,8 @@ async function forceBackground(r,g,b) {
             obj.data[i + 3] = 0xff
         };
     }
-    console.timeEnd('buffer')
+    console.timeEnd('background')
+
     const webpLossless = await sharp(Buffer.from(obj.data), { raw: { width: obj.info.width, height: obj.info.height, channels: obj.info.channels } }).webp({ lossless: true}).toBuffer()
     writeFileSync('./source/source-background.webp', webpLossless)
     return composite('background', sharp(webpLossless).resize({ width: 32 }))
@@ -40,9 +47,9 @@ async function forceBackground(r,g,b) {
 await Promise.all([
     forceBackground(0xd1, 0xe7, 0xf5),
 
-    // composite('32_shrink_false', sharp(sourceBytes).resize({ width: 32, fastShrinkOnLoad: false })),
-    // composite('32_default', sharp(sourceBytes).resize({ width: 32 })),
-    // composite('32_shrink_false_mitchell', sharp(sourceBytes).resize({ width: 32, fastShrinkOnLoad: false, kernel: 'mitchell' })),
+    composite('32_shrink_false', sharp(sourceBytes).resize({ width: 32, fastShrinkOnLoad: false })),
+    composite('32_default', sharp(sourceBytes).resize({ width: 32 })),
+    composite('32_shrink_false_mitchell', sharp(sourceBytes).resize({ width: 32, fastShrinkOnLoad: false, kernel: 'mitchell' })),
 
 ]).catch(e => console.log(e));
 
